@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useMutation } from '@apollo/client';
-import { LOGIN_USER } from '../graphql/mutations/Login';
+import { LOGIN_USER } from '../graphql/mutations/mutations';
 import { useNavigate } from 'react-router-dom';
 import AuthStyles from '../styles/authStyles';
 
@@ -16,14 +16,10 @@ const LoginScreen = () => {
       alert('Por favor, completa todos los campos.');
       return;
     }
-    console.log('Email:', email);
-    console.log('Password:', password);
     try {
       const response = await login({ variables: { email, password } });
-      console.log('Response:', response.data);
       if (response?.data?.Login?.success) {
-        console.log('Token:', response.data.Login.token);
-        localStorage.setItem('token', response.data.Login.token); // Guardar el token en localStorage
+        localStorage.setItem('token', response.data.Login.token);
         navigate('/Home');
       } else {
         alert('Credenciales incorrectas.');
@@ -34,43 +30,61 @@ const LoginScreen = () => {
   };
 
   return (
-    <form onSubmit={handleLogin} style={AuthStyles.container}>
-      <div style={AuthStyles.card}>
-        <h2 style={AuthStyles.title}>🎟️ Iniciar Sesión</h2>
-        <input
-          style={AuthStyles.input}
-          type="email"
-          placeholder="Correo electrónico"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <input
-          style={AuthStyles.input}
-          type="password"
-          placeholder="Contraseña"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        <button style={AuthStyles.button} type="submit" disabled={loading}>
-          {loading ? 'Autenticando...' : 'Entrar'}
-        </button>
+    <div style={AuthStyles.container}>
+      <h1 style={AuthStyles.logo}>OTAKUyt</h1>
+      <p style={AuthStyles.subtitle}>Bienvenido!</p>
+      
+      <input
+        style={AuthStyles.input}
+        type="email"
+        placeholder="Correo electrónico"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        onKeyPress={(e) => {
+          if (e.key === 'Enter') {
+            handleLogin(e);
+          }
+        }}
+      />
+      
+      <input
+        style={AuthStyles.input}
+        type="password"
+        placeholder="Contraseña"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        onKeyPress={(e) => {
+          if (e.key === 'Enter') {
+            handleLogin(e);
+          }
+        }}
+      />
+      
+      <button 
+        style={AuthStyles.button} 
+        onClick={handleLogin}
+        disabled={loading}
+      >
+        {loading ? 'Autenticando...' : 'Iniciar Sesión'}
+      </button>
+      
+      <button
+        style={AuthStyles.secondaryButton}
+        onClick={() => navigate('/CreateUser')}
+      >
+        Crear Cuenta
+      </button>
 
-        {error && (
-          <p style={AuthStyles.errorText}>
-            ❌ Error: {error.message.includes('Network') ? 'No se pudo conectar al servidor.' : error.message}
-          </p>
-        )}
-
-        {/* Botón para redirigir a la página de creación de cuenta */}
-        <button
-          style={{ ...AuthStyles.button, marginTop: '10px', backgroundColor: '#4CAF50' }}
-          type="button"
-          onClick={() => navigate('/CreateUser')}
-        >
-          Crear cuenta
-        </button>
-      </div>
-    </form>
+      {error && (
+        <p style={AuthStyles.errorText}>
+          ❌ Error: {error.message.includes('Network') ? 'No se pudo conectar al servidor.' : error.message}
+        </p>
+      )}
+      
+      <p style={AuthStyles.footer}>
+        ©Los Mochilas - 2025. Todos los derechos reservados.
+      </p>
+    </div>
   );
 };
 
