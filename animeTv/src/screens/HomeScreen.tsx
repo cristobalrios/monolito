@@ -157,10 +157,7 @@ const HomeScreen = () => {
         {/* Mostrar resultados de búsqueda si hay una búsqueda */}
         {showSearchResults && (
           <ul style={HomeStyles.animeList}>
-            {searchData.busquedaAvanzada
-              .slice()
-              .sort((a: any, b: any) => a.title.localeCompare(b.title))
-              .map((anime: any) => (
+            {searchData.busquedaAvanzada.map((anime: any) => (
                 <li key={anime.mal_id} style={HomeStyles.animeItem}>
                    <div style={{ display: 'flex', gap: '20px' }}>
                     <img
@@ -203,10 +200,7 @@ const HomeScreen = () => {
               En Emisión
             </h3>
             <ul style={HomeStyles.animeList}>
-              {airingData.enEmision
-                .slice()
-                .sort((a: any, b: any) => a.title.localeCompare(b.title))
-                .map((anime: any) => (
+              {airingData.enEmision.map((anime: any) => (
                   <li key={anime.mal_id} style={HomeStyles.animeItem}>
                      <div style={{ display: 'flex', gap: '20px' }}>
                     <img
