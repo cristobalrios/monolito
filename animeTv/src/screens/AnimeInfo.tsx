@@ -202,7 +202,7 @@ const AnimeInfo = () => {
                           <strong>Última emisión:</strong> {formatDate(anime.aired.toDate)}
                         </p>
                       )}
-                      {!anime.aired.toDate && anime.episodes > 1 && (
+                      {!anime.aired.toDate && anime.episodes > 1 || anime.episodes == null && (
                         <p style={{ margin: '5px 0', color: 'lightgreen', fontWeight: 'bold' }}>
                           EN EMISIÓN
                         </p>
