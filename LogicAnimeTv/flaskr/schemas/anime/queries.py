@@ -1,6 +1,6 @@
 import graphene
 from .types import *
-from ...services.jikan_api import buscar_anime_avanzado
+from ...services.jikan_api import *
 from ...auth.utils import verify_token
 from ...models.user_model import User
 from ...models.anime_model import Anime
@@ -19,6 +19,11 @@ class AnimeQueries(graphene.ObjectType):
     en_emision = graphene.List(AnimeType)
 
     obtener_favoritos = graphene.List(FavoriteAnimeType)
+
+    buscar_anime_por_id = graphene.Field(	
+        AnimeType,
+        mal_id=graphene.Int(required=True)
+    )
 
     # Resolver: busqueda_avanzada
     def resolve_busqueda_avanzada(self, info, nombre=None, tipo=None, estado=None, min_score=None, genero=None):
@@ -48,3 +53,9 @@ class AnimeQueries(graphene.ObjectType):
             return [] # Si el token es inválido, devuelve una lista vacía
         
         return Anime.objects(user=user_id) # Devuelve los animes guardados por el usuario
+    
+    def resolve_buscar_anime_por_id(self, info, mal_id):
+        resultado = buscar_anime_por_id(mal_id)
+        if "error" in resultado:
+            return None
+        return resultado
