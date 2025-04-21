@@ -18,3 +18,21 @@ export const LOGIN_USER = gql`
     }
   }
 `;
+
+export const ADD_TO_FAVOURITES = gql`
+  mutation SaveAnime($malId: Int!) {
+    SaveAnime(malId: $malId) {
+      success
+      message
+    }
+  }
+`;
+
+export const DELETE_FROM_FAVOURITES = gql`
+  mutation DeleteAnime($malId: Int!) {
+    DeleteAnime(malId: $malId) {
+      success
+      message
+    }
+  }
+`;

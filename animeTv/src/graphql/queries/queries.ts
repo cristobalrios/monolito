@@ -72,3 +72,23 @@ export const GET_AIRING = gql`
         }
     }
 `;
+
+export const GET_FAVOURITES = gql`
+  query ObtenerFavoritos {
+    obtenerFavoritos {
+      malId
+      title
+      synopsis
+      genres
+      episodes
+      type
+      imageUrl
+      rating
+      score
+      rank
+      status
+      airing
+      trailerUrl
+    }
+  }
+`;
