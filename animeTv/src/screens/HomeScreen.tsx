@@ -194,8 +194,16 @@ const HomeScreen = () => {
           >
           ❤️ <span>Favoritos</span>
           </button>
-          <button style={HomeStyles.navButton} onClick={handleLogout}>
-          🚪 <span>Salir</span>
+          
+          {/* Cerrar Sesión */}
+          <button 
+            style={HomeStyles.navButton}
+            onClick={() => {
+              localStorage.removeItem('token');
+              navigate('/');
+            }}
+          >
+            🚪 <span>Salir</span>
           </button>
         </div>
       </header>
@@ -301,8 +309,6 @@ const HomeScreen = () => {
                       style={{ 
                         ...HomeStyles.favouriteButton,
                         ...(anime.isFavorite ? { 
-                          backgroundColor: '#260d6e',
-                          borderColor: '#260d6e',
                           color: 'white'
                         } : {}),
                         transition: 'all 0.3s ease',
@@ -358,8 +364,6 @@ const HomeScreen = () => {
                       style={{ 
                         ...HomeStyles.favouriteButton,
                         ...(anime.isFavorite ? { 
-                          backgroundColor: '#260d6e',
-                          borderColor: '#260d6e',
                           color: 'white'
                         } : {}),
                         transition: 'all 0.3s ease',

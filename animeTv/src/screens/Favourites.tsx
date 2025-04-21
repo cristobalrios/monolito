@@ -90,20 +90,33 @@ const Favourites = () => {
     }
   };
 
-  if (loading) return <p style={HomeStyles.loading}>Cargando favoritos...</p>;
+  if (loading) return <p style={HomeStyles.sectionTitle}>Cargando favoritos...</p>;
   if (error) return <p style={HomeStyles.error}>Error: {error.message}</p>;
 
   return (
     <div style={HomeStyles.container}>
       <header style={HomeStyles.header}>
-        <h1 style={HomeStyles.logo}>OTAKUyt - Favoritos</h1>
+        <h1 style={HomeStyles.logo}>OTAKUyt</h1>
         <div style={HomeStyles.navContainer}>
+          {/* Botón de Volver */}
           <button 
             style={HomeStyles.navButton}
-            onClick={() => navigate('/')}
+            onClick={() => navigate(-1)} // Navega a la página anterior
           >
-            🏠 <span>Inicio</span>
+            ↩️ <span>Volver</span>
           </button>
+
+          {/* Cerrar Sesión */}
+          <button 
+            style={HomeStyles.navButton}
+            onClick={() => {
+              localStorage.removeItem('token');
+              navigate('/');
+            }}
+          >
+            🚪 <span>Salir</span>
+          </button>
+          
         </div>
       </header>
 
@@ -145,8 +158,6 @@ const Favourites = () => {
                     <button 
                       style={{ 
                         ...HomeStyles.favouriteButton,
-                        backgroundColor: '#260d6e',
-                        borderColor: '#260d6e',
                         color: 'white',
                         transition: 'all 0.3s ease',
                       }}
