@@ -4,7 +4,7 @@ from flaskr.schemas.anime.queries import *
 
 class TestSaveAnimeMutation(unittest.TestCase):
 
-    @patch("flaskr.services.jikan_api.buscar_anime_avanzado")
+    @patch("flaskr.schemas.anime.queries.buscar_anime_avanzado")
     def test_busqueda_avanzada(self, mock_buscar_anime_avanzado):
         mock_buscar_anime_avanzado.return_value = [
             {
