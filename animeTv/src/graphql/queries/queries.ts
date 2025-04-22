@@ -62,7 +62,6 @@ export const GET_AIRING = gql`
             score
             rank
             status
-            airing
             trailerUrl
             aired {
                 fromDate
@@ -71,4 +70,49 @@ export const GET_AIRING = gql`
             }
         }
     }
+`;
+
+export const GET_FAVOURITES = gql`
+  query ObtenerFavoritos {
+    obtenerFavoritos {
+      malId
+      title
+      synopsis
+      genres
+      episodes
+      type
+      imageUrl
+      rating
+      score
+      rank
+      status
+      airing
+      trailerUrl
+    }
+  }
+`;
+
+export const GET_ANIME = gql`
+  query BuscarAnimePorId($malId: Int!) {
+    buscarAnimePorId(malId: $malId) {
+      malId
+      title
+      synopsis
+      genres
+      episodes
+      type
+      imageUrl
+      aired {
+        fromDate
+        toDate
+        stringDate
+      }
+      rating
+      score
+      rank
+      status
+      airing
+      trailerUrl
+    }
+  }
 `;

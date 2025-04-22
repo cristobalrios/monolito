@@ -3,6 +3,7 @@ import HomeScreen from './screens/HomeScreen';
 import LoginScreen from './screens/LoginScreen';
 import CreateUser from './screens/CreateUser';
 import AnimeInfo from './screens/AnimeInfo';
+import Favourites from './screens/Favourites';
 import React from 'react';
 
 function App() {
@@ -12,6 +13,7 @@ function App() {
         <Route path="/Home" element={<HomeScreen />} />
         <Route path="/CreateUser" element={<CreateUser />} />
         <Route path="/AnimeInfo/:id" element={<AnimeInfo />} />
+        <Route path="/Favourites" element={<Favourites />} />
         <Route path="/" element={<LoginScreen />} />
       </Routes>
     </Router>

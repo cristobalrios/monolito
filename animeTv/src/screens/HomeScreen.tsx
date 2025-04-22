@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useLazyQuery } from '@apollo/client';
 import HomeStyles from '../styles/homeStyles';
-import { ADVANCED_SEARCH, GET_AIRING } from '../graphql/queries/queries';
+import { useMutation } from '@apollo/client';
+import { ADD_TO_FAVOURITES, DELETE_FROM_FAVOURITES } from '../graphql/mutations/mutations';
+import { ADVANCED_SEARCH, GET_AIRING, GET_FAVOURITES } from '../graphql/queries/queries';
 import imagenref from '../utils/ChatGPT_Image_tipica.png';
 import { useNavigate } from 'react-router-dom';
 
@@ -20,15 +22,68 @@ const HomeScreen = () => {
   const [minScore, setMinScore] = useState<number | undefined>(undefined);
   const [generos, setGeneros] = useState<string[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
+  const [animesList, setAnimesList] = useState<any[]>([]);
   const navigate = useNavigate();
 
 
+  const [addToFavourites] = useMutation(ADD_TO_FAVOURITES);
+  const [deleteFromFavourites] = useMutation(DELETE_FROM_FAVOURITES);
   const [searchAnime, { loading: searchLoading, error: searchError, data: searchData }] = useLazyQuery(ADVANCED_SEARCH);
   const [getAiringAnime, { loading: airingLoading, error: airingError, data: airingData }] = useLazyQuery(GET_AIRING);
+  const [getUserFavourites, { data: favoritesData }] = useLazyQuery(GET_FAVOURITES);
 
   useEffect(() => {
     getAiringAnime();
   }, [getAiringAnime]);
+
+  useEffect(() => {
+    if (airingData?.enEmision) {
+      setAnimesList(airingData.enEmision.map((anime: any) => ({
+        ...anime,
+        isFavorite: false
+      })));
+    }
+  }, [airingData]);
+  
+  useEffect(() => {
+    if (searchData?.busquedaAvanzada) {
+      setAnimesList(searchData.busquedaAvanzada.map((anime: any) => ({
+        ...anime,
+        isFavorite: false
+      })));
+    }
+  }, [searchData]);
+
+  useEffect(() => {
+    const checkFavourites = async () => {
+      if (!localStorage.getItem('token')) return;
+      
+      try {
+        await getUserFavourites({
+          context: {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem('token')}`
+            }
+          }
+        });
+      } catch (err) {
+        console.error('Error al obtener favoritos:', err);
+      }
+    };
+    checkFavourites();
+  }, [getUserFavourites]);
+
+  useEffect(() => {
+    if (favoritesData?.obtenerFavoritos) {
+      const favouriteIds = favoritesData.obtenerFavoritos.map((fav: { malId: any; }) => fav.malId);
+      setAnimesList((prev) =>
+        prev.map((anime) => ({
+          ...anime,
+          isFavorite: favouriteIds.includes(anime.malId),
+        }))
+      );
+    }
+  }, [favoritesData]);
 
   const handleSearch = () => {
     const variables: any = {};
@@ -70,18 +125,85 @@ const HomeScreen = () => {
   const showSearchResults = hasSearched && searchData?.busquedaAvanzada;
   const isLoading = airingLoading || searchLoading;
   const error = airingError || searchError;
+  
+  const handleToggleFavourite = async (anime: any, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+      alert('Debes iniciar sesión para guardar favoritos');
+      return;
+    }
+    
+    try {
+      const malId = anime.malId || anime.mal_id;
+      let response;
+      
+      if (anime.isFavorite) {
+                response = await deleteFromFavourites({
+          variables: {malId},
+          context: {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }
+        });
+        if (response.data?.DeleteAnime?.success) {
+          alert(`"${anime.title}" ha sido eliminado de tus favoritos.`);
+        }
+      } else {
+        response = await addToFavourites({
+          variables: {malId},
+          context: {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }
+        });
+        if (response.data?.SaveAnime?.success) {
+          alert(`"${anime.title}" ha sido agregado a tus favoritos.`);
+        }
+      } 
+      
+      if (response.data?.SaveAnime?.success || response.data?.DeleteAnime?.success) {
+        
+        setAnimesList(prev => prev.map(a => 
+          (a.malId === malId || a.mal_id === malId) ? {...a, isFavorite: !a.isFavorite} : a
+        ));
+      } else {
+        const errorMessage = response.data?.SaveAnime?.message || 
+                           response.data?.DeleteAnime?.message || 
+                           'Error desconocido';
+        alert(errorMessage);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error al actualizar favoritos');
+    }
+  };
 
   return (
     <div style={HomeStyles.container}>
       {/* Barra superior morada */}
       <header style={HomeStyles.header}>
-        <h1 style={HomeStyles.logo}>OtakuYt</h1>
+        <h1 style={HomeStyles.logo}>OTAKUyt</h1>
         <div style={HomeStyles.navContainer}>
-          <button style={HomeStyles.navButton}>
+          <button 
+            style={HomeStyles.navButton}
+            onClick={() => navigate('/Favourites')}
+          >
           ❤️ <span>Favoritos</span>
           </button>
-          <button style={HomeStyles.navButton} onClick={handleLogout}>
-          🚪 <span>Salir</span>
+          
+          {/* Cerrar Sesión */}
+          <button 
+            style={HomeStyles.navButton}
+            onClick={() => {
+              localStorage.removeItem('token');
+              navigate('/');
+            }}
+          >
+            🚪 <span>Salir</span>
           </button>
         </div>
       </header>
@@ -157,8 +279,8 @@ const HomeScreen = () => {
         {/* Mostrar resultados de búsqueda si hay una búsqueda */}
         {showSearchResults && (
           <ul style={HomeStyles.animeList}>
-            {searchData.busquedaAvanzada.map((anime: any) => (
-                <li key={anime.mal_id} style={HomeStyles.animeItem}>
+            {animesList.map((anime: any) => (
+                <li key={anime.malId} style={HomeStyles.animeItem}>
                    <div style={{ display: 'flex', gap: '20px' }}>
                     <img
                       src={anime.imageUrl}
@@ -176,16 +298,28 @@ const HomeScreen = () => {
                     <div style={{ flex: 1 }}>
                       <h3
                         style={{ ...HomeStyles.animeTitle, cursor: 'pointer', color: '#ffffff' }}
-                        onClick={() => handleAnimeClick(anime.mal_id)}
+                        onClick={() => handleAnimeClick(anime.malId)}
                       >
                         {anime.title}
                       </h3>
                       <p style={HomeStyles.animeDescription}>
                         {anime.synopsis || 'Sin descripción'}
                       </p>
-                      <button style={HomeStyles.favouriteButton}>
-                        {anime.isFavorite ? 'x Eliminar de favoritos' : '♡ Agregar a favoritos'}
-                      </button>
+                      <button 
+                      style={{ 
+                        ...HomeStyles.favouriteButton,
+                        ...(anime.isFavorite ? { 
+                          color: 'white'
+                        } : {}),
+                        transition: 'all 0.3s ease',
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleFavourite(anime, e);
+                      }}
+                    >
+                      {anime.isFavorite ? '× Eliminar de favoritos' : '♡ Agregar a favoritos'}
+                    </button>
                     </div>
                   </div>
                 </li>
@@ -200,8 +334,8 @@ const HomeScreen = () => {
               En Emisión
             </h3>
             <ul style={HomeStyles.animeList}>
-              {airingData.enEmision.map((anime: any) => (
-                  <li key={anime.mal_id} style={HomeStyles.animeItem}>
+              {animesList.map((anime: any) => (
+                  <li key={anime.malId} style={HomeStyles.animeItem}>
                      <div style={{ display: 'flex', gap: '20px' }}>
                     <img
                       src={anime.imageUrl}
@@ -219,16 +353,28 @@ const HomeScreen = () => {
                     <div style={{ flex: 1 }}>
                       <h3
                         style={{ ...HomeStyles.animeTitle, cursor: 'pointer', color: '#ffffff' }}
-                        onClick={() => handleAnimeClick(anime.mal_id)}
+                        onClick={() => handleAnimeClick(anime.malId)}
                       >
                         {anime.title}
                       </h3>
                       <p style={HomeStyles.animeDescription}>
                         {anime.synopsis || 'Sin descripción'}
                       </p>
-                      <button style={HomeStyles.favouriteButton}>
-                        {anime.isFavorite ? 'x Eliminar de favoritos' : '♡ Agregar a favoritos'}
-                      </button>
+                      <button 
+                      style={{ 
+                        ...HomeStyles.favouriteButton,
+                        ...(anime.isFavorite ? { 
+                          color: 'white'
+                        } : {}),
+                        transition: 'all 0.3s ease',
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleFavourite(anime, e);
+                      }}
+                    >
+                      {anime.isFavorite ? '× Eliminar de favoritos' : '♡ Agregar a favoritos'}
+                    </button>
                     </div>
                   </div>
                   </li>
