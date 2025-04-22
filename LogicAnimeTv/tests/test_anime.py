@@ -1,4 +1,4 @@
-import unittest
+import unittest 
 import mongomock
 from mongoengine import connect, disconnect
 
@@ -20,7 +20,7 @@ class TestAnimeModel(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         # Desconectar de la base de datos mock
-        disconnect()
+        disconnect()    
 
     def setUp(self):
         # Limpiar las colecciones antes de cada test
@@ -65,6 +65,7 @@ class TestAnimeModel(unittest.TestCase):
         self.assertEqual(anime_from_db.title, "Test Anime")
         self.assertEqual(anime_from_db.user.email, "test_user@example.com")
         self.assertListEqual(anime_from_db.genres, ["Action", "Adventure"])
+
 
 if __name__ == '__main__':
     unittest.main()

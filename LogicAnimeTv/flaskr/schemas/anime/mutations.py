@@ -41,6 +41,9 @@ class SaveAnime(graphene.Mutation):
             if not user:
                 return SaveAnime(success=False, message="Usuario no encontrado")
 
+            if Anime.objects(mal_id=mal_id, user=user).first():
+                return SaveAnime(success=False, message="Anime ya guardado")
+
             anime = Anime(
                 mal_id=anime_data.get("mal_id"),
                 title=anime_data.get("title"),
@@ -58,9 +61,6 @@ class SaveAnime(graphene.Mutation):
                 trailer_url=anime_data.get("trailer", {}).get("url"),
                 user = user
             )
-
-            if Anime.objects(mal_id=mal_id, user=user).first():
-                return SaveAnime(success=False, message="Anime ya guardado")
 
             
             anime.save() # Guarda el anime en la base de datos
