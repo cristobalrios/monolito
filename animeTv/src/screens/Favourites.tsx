@@ -8,7 +8,9 @@ import imagenref from '../utils/ChatGPT_Image_tipica.png';
 
 const Favourites = () => {
   const [favouritesList, setFavouritesList] = useState<any[]>([]);
-  const [getUserFavourites, { loading, error, data }] = useLazyQuery(GET_FAVOURITES);
+  const [getUserFavourites, { loading, error, data }] = useLazyQuery(GET_FAVOURITES, {
+    fetchPolicy: 'network-only', // Asegura que siempre se haga una nueva solicitud al servidor
+  });
   const [deleteFromFavourites] = useMutation(DELETE_FROM_FAVOURITES);
   const navigate = useNavigate();
 
@@ -19,30 +21,24 @@ const Favourites = () => {
       return;
     }
 
-    fetchFavourites();
-  }, [navigate]);
-
-  const fetchFavourites = async () => {
-    const token = localStorage.getItem('token');
-    try {
-      await getUserFavourites({
-        context: {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      });
-    } catch (err) {
-      console.error('Error fetching favourites:', err);
-    }
-  };
+    // Ejecutar la consulta para obtener los favoritos
+    getUserFavourites({
+      context: {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    });
+  }, [navigate, getUserFavourites]);
 
   useEffect(() => {
     if (data?.obtenerFavoritos) {
-      setFavouritesList(data.obtenerFavoritos.map((anime: any) => ({
-        ...anime,
-        isFavorite: true // Todos los animes aquí son favoritos por definición
-      })));
+      setFavouritesList(
+        data.obtenerFavoritos.map((anime: any) => ({
+          ...anime,
+          isFavorite: true, // Todos los animes aquí son favoritos por definición
+        }))
+      );
     }
   }, [data]);
 
@@ -50,34 +46,40 @@ const Favourites = () => {
     navigate(`/AnimeInfo/${animeId}`);
   };
 
-  const handleRemoveFavourite = async (anime: { malId: any; }, e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+  const handleRemoveFavourite = async (anime: { malId: any }, e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
     e.stopPropagation();
     const token = localStorage.getItem('token');
-    
+
     if (!token) {
       alert('Debes iniciar sesión para realizar esta acción');
       return;
     }
-    
+
     try {
-      setFavouritesList(prev => prev.filter(item => item.malId !== anime.malId));
-      
+      setFavouritesList((prev) => prev.filter((item) => item.malId !== anime.malId));
+
       const response = await deleteFromFavourites({
         variables: { malId: anime.malId },
         context: {
           headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
+            Authorization: `Bearer ${token}`,
+          },
+        },
       });
-  
+
       if (response.data?.DeleteAnime?.success) {
         // Volver a consultar los favoritos para asegurar la sincronización
-        await fetchFavourites();
+        getUserFavourites({
+          context: {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        });
         alert('Anime eliminado de favoritos');
       } else {
-        const errorMessage = response.data?.DeleteAnime?.message || 
-                            'Error desconocido al eliminar de favoritos';
+        const errorMessage =
+          response.data?.DeleteAnime?.message || 'Error desconocido al eliminar de favoritos';
         alert(errorMessage);
       }
     } catch (err) {
@@ -99,7 +101,7 @@ const Favourites = () => {
         <h1 style={HomeStyles.logo}>OTAKUyt</h1>
         <div style={HomeStyles.navContainer}>
           {/* Botón de Volver */}
-          <button 
+          <button
             style={HomeStyles.navButton}
             onClick={() => navigate(-1)} // Navega a la página anterior
           >
@@ -107,7 +109,7 @@ const Favourites = () => {
           </button>
 
           {/* Cerrar Sesión */}
-          <button 
+          <button
             style={HomeStyles.navButton}
             onClick={() => {
               localStorage.removeItem('token');
@@ -116,7 +118,6 @@ const Favourites = () => {
           >
             🚪 <span>Salir</span>
           </button>
-          
         </div>
       </header>
 
@@ -155,8 +156,8 @@ const Favourites = () => {
                     <p style={HomeStyles.animeDescription}>
                       {anime.synopsis || 'Sin descripción'}
                     </p>
-                    <button 
-                      style={{ 
+                    <button
+                      style={{
                         ...HomeStyles.favouriteButton,
                         color: 'white',
                         transition: 'all 0.3s ease',

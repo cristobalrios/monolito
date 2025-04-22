@@ -33,7 +33,7 @@ const HomeStyles: { [key: string]: CSSProperties } = {
   },
   animeInfoButton: {
     backgroundColor: 'transparent',
-    color: '#260d6e',
+    color: '#397d6e',
     border: '1px solid #260d6e',
     padding: '10px 20px',
     borderRadius: '5px',

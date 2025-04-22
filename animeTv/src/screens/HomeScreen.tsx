@@ -91,7 +91,7 @@ const HomeScreen = () => {
     if (nombre !== '') variables.nombre = nombre;
     if (tipo !== '') variables.tipo = tipo;
     if (estado !== '') variables.estado = estado;
-    if (minScore !== undefined) variables.min_score = minScore;
+    if (minScore !== undefined) variables.minScore = minScore;
     if (generos.length > 0) variables.genero = generos.join(',');
 
     setHasSearched(true);
@@ -231,9 +231,12 @@ const HomeScreen = () => {
             style={HomeStyles.searchInput}
           >
             <option value="">Tipo</option>
-            <option value="TV">TV</option>
+            <option value="TV">serie de TV</option>
             <option value="Movie">Película</option>
             <option value="OVA">OVA</option>
+            <option value="special">Especial de televisión </option>
+            <option value="ONA">ONA</option>
+            <option value="Music">videos Musicales</option>
           </select>
           <select
             value={estado}
@@ -242,14 +245,24 @@ const HomeScreen = () => {
           >
             <option value="">Estado</option>
             <option value="airing">En emisión</option>
-            <option value="completed">Finalizado</option>
+            <option value="complete">Finalizado</option>
             <option value="upcoming">Próximamente</option>
           </select>
           <input
             type="number"
             value={minScore || ''}
-            onChange={(e) => setMinScore(parseFloat(e.target.value))}
-            placeholder="Puntuación mínima"
+            onChange={(e) => {
+              const value = parseFloat(e.target.value);
+              if (value >= 1 && value <= 10) {
+                setMinScore(value);
+              } else if (value < 1) {
+                setMinScore(1); // Ajusta automáticamente al mínimo permitido
+              } else if (value > 10) {
+                setMinScore(10); // Ajusta automáticamente al máximo permitido
+              }
+            }}
+            placeholder="Puntuación mínima (entre 1 y 10)"
+            step="0.1"
             style={HomeStyles.searchInput}
           />
           <button onClick={handleSearch} style={HomeStyles.searchButton}>
