@@ -32,7 +32,7 @@ class AnimeQueries(graphene.ObjectType):
         if tipo: params["type"] = tipo
         if estado: params["status"] = estado
         if genero: params["genres"] = genero  # En Jikan se usa el ID de género
-
+        if min_score: params["min_score"] = min_score
         resultado = buscar_anime_avanzado(params)
         return resultado
 
