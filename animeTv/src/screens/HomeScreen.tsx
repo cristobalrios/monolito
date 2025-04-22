@@ -8,11 +8,71 @@ import imagenref from '../utils/ChatGPT_Image_tipica.png';
 import { useNavigate } from 'react-router-dom';
 
 const genreMap = {
-  '1': 'Acción',
-  '2': 'Aventura',
-  '3': 'Comedia',
-  '4': 'Drama',
-  '5': 'Fantasía',
+  '1': 'Action',
+  '2': 'Adventure',
+  '3': 'Racing',
+  '4': 'Comedy',
+  '5': 'Avant Garde',
+  '6': 'Mythology',
+  '7': 'Mystery',
+  '8': 'Drama',
+  '10': 'Fantasy',
+  '11': 'Strategy Game',
+  '13': 'Historical',
+  '14': 'Horror',
+  '17': 'Martial Arts',
+  '18': 'Mecha',
+  '19': 'Music',
+  '20': 'Parody',
+  '21': 'Samurai',
+  '22': 'Romance',
+  '23': 'School',
+  '24': 'Sci-Fi',
+  '26': 'Girls Love',
+  '28': 'Boys Love',
+  '29': 'Space',
+  '30': 'Sports',
+  '31': 'Super Power',
+  '32': 'Vampire',
+  '35': 'Harem',
+  '36': 'Slice of Life',
+  '37': 'Supernatural',
+  '38': 'Military',
+  '39': 'Detective',
+  '40': 'Psychological',
+  '41': 'Suspense',
+  '46': 'Award Winning',
+  '47': 'Gourmet',
+  '50': 'Adult Cast',
+  '51': 'Anthropomorphic',
+  '52': 'CGDCT',
+  '53': 'Childcare',
+  '54': 'Combat Sports',
+  '55': 'Delinquents',
+  '56': 'Educational',
+  '57': 'Gag Humor',
+  '58': 'Gore',
+  '59': 'High Stakes Game',
+  '60': 'Idols (Female)',
+  '61': 'Idols (Male)',
+  '62': 'Isekai',
+  '63': 'Iyashikei',
+  '64': 'Love Polygon',
+  '66': 'Mahou Shoujo',
+  '67': 'Medical',
+  '68': 'Organized Crime',
+  '69': 'Otaku Culture',
+  '70': 'Performing Arts',
+  '71': 'Pets',
+  '72': 'Reincarnation',
+  '73': 'Reverse Harem',
+  '74': 'Love Status Quo',
+  '75': 'Showbiz',
+  '76': 'Survival',
+  '77': 'Team Sports',
+  '78': 'Time Travel',
+  '79': 'Video Game',
+  '81': 'Crossdressing',
 };
 
 const HomeScreen = () => {
@@ -23,6 +83,7 @@ const HomeScreen = () => {
   const [generos, setGeneros] = useState<string[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [animesList, setAnimesList] = useState<any[]>([]);
+  const [generosVisibles, setGenerosVisibles] = useState(8); // Estado para controlar la cantidad de géneros visibles
   const navigate = useNavigate();
 
 
@@ -271,18 +332,94 @@ const HomeScreen = () => {
         </div>
 
         {/* Filtros de género */}
-        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', margin: '15px 0' }}>
-          {(['1', '2', '3', '4', '5'] as Array<keyof typeof genreMap>).map((genero) => (
-            <label key={genero} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <input
-                type="checkbox"
-                value={genero}
-                checked={generos.includes(genero)}
-                onChange={() => toggleGenero(genero)}
-              />
-              {genreMap[genero]}
-            </label>
-          ))}
+        <div style={{ margin: '15px 0' }}>
+          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Seleccionar géneros:</label>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+            {Object.entries(genreMap)
+              .slice(0, generosVisibles) // Mostrar solo los géneros visibles
+              .map(([key, value]) => (
+                <button
+                  key={key}
+                  onClick={() => toggleGenero(key)}
+                  style={{
+                    padding: '10px 15px',
+                    borderRadius: '5px',
+                    border: '1px solid #ccc',
+                    backgroundColor: generos.includes(key) ? '#6200ea' : '#f9f9f9',
+                    color: generos.includes(key) ? '#fff' : '#000',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    transition: 'background-color 0.3s ease, color 0.3s ease',
+                  }}
+                >
+                  {value}
+                </button>
+              ))}
+          </div>
+          <div style={{ marginTop: '10px', display: 'flex', gap: '10px' }}>
+            {generosVisibles < Object.keys(genreMap).length && (
+              <button
+                onClick={() => setGenerosVisibles((prev) => prev + 8)} // Mostrar 8 más
+                style={{
+                  padding: '10px 15px',
+                  borderRadius: '5px',
+                  border: '1px solid #ccc',
+                  backgroundColor: '#6200ea',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  transition: 'background-color 0.3s ease, color 0.3s ease',
+                }}
+              >
+                Ver más
+              </button>
+            )}
+            {generosVisibles > 8 && (
+              <button
+                onClick={() => setGenerosVisibles((prev) => Math.max(prev - 8, 8))} // Mostrar 8 menos
+                style={{
+                  padding: '10px 15px',
+                  borderRadius: '5px',
+                  border: '1px solid #ccc',
+                  backgroundColor: '#6200ea',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  transition: 'background-color 0.3s ease, color 0.3s ease',
+                }}
+              >
+                Ver menos
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Botón para limpiar búsqueda */}
+        <div style={{ marginTop: '20px', textAlign: 'center', marginBottom: '20px' }}>
+          <button
+            onClick={() => {
+              setNombre('');
+              setTipo('');
+              setEstado('');
+              setMinScore(undefined);
+              setGeneros([]);
+              setHasSearched(false);
+              setGenerosVisibles(8); // Restablecer géneros visibles a 8
+              getAiringAnime(); // Mostrar animes en emisión por defecto
+            }}
+            style={{
+              padding: '10px 20px',
+              borderRadius: '5px',
+              border: '1px solid #ccc',
+              backgroundColor: '#ff6b6b',
+              color: '#fff',
+              cursor: 'pointer',
+              fontSize: '14px',
+              transition: 'background-color 0.3s ease, color 0.3s ease',
+            }}
+          >
+            Limpiar búsqueda
+          </button>
         </div>
 
         {/* Resultados */}
