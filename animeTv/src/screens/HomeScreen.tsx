@@ -86,31 +86,70 @@ const HomeScreen = () => {
   const [generosVisibles, setGenerosVisibles] = useState(8); // Estado para controlar la cantidad de géneros visibles
   const navigate = useNavigate();
 
-
   const [addToFavourites] = useMutation(ADD_TO_FAVOURITES);
   const [deleteFromFavourites] = useMutation(DELETE_FROM_FAVOURITES);
   const [searchAnime, { loading: searchLoading, error: searchError, data: searchData }] = useLazyQuery(ADVANCED_SEARCH);
   const [getAiringAnime, { loading: airingLoading, error: airingError, data: airingData }] = useLazyQuery(GET_AIRING);
   const [getUserFavourites, { data: favoritesData }] = useLazyQuery(GET_FAVOURITES);
 
+  // Restaurar búsqueda desde localStorage al cargar el componente
   useEffect(() => {
-    getAiringAnime();
-  }, [getAiringAnime]);
+    const savedSearch = localStorage.getItem('homeSearch');
+    if (savedSearch) {
+      const { nombre, tipo, estado, minScore, generos, animesList, hasSearched } = JSON.parse(savedSearch);
+      setNombre(nombre || '');
+      setTipo(tipo || '');
+      setEstado(estado || '');
+      setMinScore(minScore || undefined);
+      setGeneros(generos || []);
+      setAnimesList(animesList || []);
+      setHasSearched(hasSearched || false);
+
+      // Realizar la búsqueda automáticamente si hay un estado guardado
+      const variables: any = {};
+      if (nombre) variables.nombre = nombre;
+      if (tipo) variables.tipo = tipo;
+      if (estado) variables.estado = estado;
+      if (minScore !== undefined) variables.minScore = minScore;
+      if (generos.length > 0) variables.genero = generos.join(',');
+
+      if (Object.keys(variables).length > 0) {
+        searchAnime({ variables });
+      }
+    } else {
+      getAiringAnime(); // Si no hay búsqueda guardada, cargar animes en emisión
+    }
+  }, [getAiringAnime, searchAnime]);
+
+  // Guardar búsqueda en localStorage antes de navegar
+  const handleNavigateToFavourites = () => {
+    const searchState = {
+      nombre,
+      tipo,
+      estado,
+      minScore,
+      generos,
+      animesList,
+      hasSearched,
+    };
+    localStorage.setItem('homeSearch', JSON.stringify(searchState));
+    navigate('/Favourites');
+  };
 
   useEffect(() => {
-    if (airingData?.enEmision) {
+    if (airingData?.enEmision && !hasSearched) {
       setAnimesList(airingData.enEmision.map((anime: any) => ({
         ...anime,
-        isFavorite: false
+        isFavorite: false,
       })));
     }
-  }, [airingData]);
-  
+  }, [airingData, hasSearched]);
+
   useEffect(() => {
     if (searchData?.busquedaAvanzada) {
       setAnimesList(searchData.busquedaAvanzada.map((anime: any) => ({
         ...anime,
-        isFavorite: false
+        isFavorite: false,
       })));
     }
   }, [searchData]);
@@ -173,7 +212,18 @@ const HomeScreen = () => {
   };
 
   const handleAnimeClick = (animeId: string) => {
-    navigate(`/AnimeInfo/${animeId}`);
+    // Guardar el estado de búsqueda en localStorage antes de navegar
+    const searchState = {
+      nombre,
+      tipo,
+      estado,
+      minScore,
+      generos,
+      animesList,
+      hasSearched,
+    };
+    localStorage.setItem('homeSearch', JSON.stringify(searchState));
+    navigate(`/AnimeInfo/${animeId}`); // Navegar a la página de detalles del anime
   };
 
   const toggleGenero = (genero: string) => {
@@ -251,7 +301,7 @@ const HomeScreen = () => {
         <div style={HomeStyles.navContainer}>
           <button 
             style={HomeStyles.navButton}
-            onClick={() => navigate('/Favourites')}
+            onClick={handleNavigateToFavourites} // Guardar búsqueda antes de navegar
           >
           ❤️ <span>Favoritos</span>
           </button>
