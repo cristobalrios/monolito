@@ -60,9 +60,9 @@ class TestCreateUserMutation(unittest.TestCase):
     def test_user_login_user_not_found(self, mock_user_class, mock_generate_token):
         mock_user_class.objects.return_value.first.return_value = None
 
-        result = LoginUser.mutate(None, None, email="not_existing_email", password="password")
+        result = LoginUser.mutate(None, None, email="not_existing_email@test.cl", password="password")
         self.assertFalse(result.success)
         self.assertEqual(result.message, "Credenciales inválidas")
-        mock_user_class.objects.return_value.first.assert_called_once_with(email="not_existing_email")
-
+        mock_generate_token.assert_not_called()
+        
        
