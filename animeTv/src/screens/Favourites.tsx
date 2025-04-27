@@ -112,7 +112,11 @@ const Favourites = () => {
           <button
             style={HomeStyles.navButton}
             onClick={() => {
+              // Eliminar el token de autenticación
               localStorage.removeItem('token');
+              // Eliminar la búsqueda guardada en localStorage
+              localStorage.removeItem('homeSearch');
+              // Redirigir al usuario a la página de inicio o login
               navigate('/');
             }}
           >

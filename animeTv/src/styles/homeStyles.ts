@@ -73,7 +73,7 @@ const HomeStyles: { [key: string]: CSSProperties } = {
   animeInfoImage: {
     width: '250px',
     height: '350px',
-    objectFit: 'cover',
+    objectFit: 'contain',
     borderRadius: '5px',
     boxShadow: '0 2px 10px rgba(0,0,0,0.5)'
   },

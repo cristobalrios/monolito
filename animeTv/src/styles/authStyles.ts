@@ -86,7 +86,7 @@ const AuthStyles: { [key: string]: CSSProperties } = {
     fontSize: '16px',
     cursor: 'pointer',
     fontWeight: 'bold',
-    marginBottom: '30px',
+    marginBottom: '15px',
   },
   subtitle: {
     fontFamily: '"Niramit", sans-serif',

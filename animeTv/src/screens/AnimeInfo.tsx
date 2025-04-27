@@ -121,12 +121,15 @@ const AnimeInfo = () => {
       <header style={HomeStyles.header}>
         <h1 style={HomeStyles.logo}>OTAKUyt</h1>
         <div style={HomeStyles.navContainer}>
+        {localStorage.getItem('token') && (
           <button 
             style={HomeStyles.navButton}
             onClick={() => navigate('/Favourites')}
           >
             ❤️ <span>Favoritos</span>
           </button>
+        )}
+
           <button 
             style={HomeStyles.navButton}
             onClick={handleBack}
@@ -135,10 +138,14 @@ const AnimeInfo = () => {
           </button>
 
           {/* Cerrar Sesión */}
-          <button 
+          <button
             style={HomeStyles.navButton}
             onClick={() => {
+              // Eliminar el token de autenticación
               localStorage.removeItem('token');
+              // Eliminar la búsqueda guardada en localStorage
+              localStorage.removeItem('homeSearch');
+              // Redirigir al usuario a la página de inicio o login
               navigate('/');
             }}
           >
@@ -165,15 +172,17 @@ const AnimeInfo = () => {
                     }}
                   />
                   {/* Botón de favoritos debajo de la imagen */}
-                  <button
-                    onClick={handleToggleFavourite}
-                    style={{
-                      ...HomeStyles.favouriteButton,
-                      ...(isFavorite ? HomeStyles.favouriteButton : {}),
-                    }}
-                  >
-                    {isFavorite ? '× Eliminar de favoritos' : '♡ Agregar a favoritos'}
-                  </button>
+                  {localStorage.getItem('token') && (
+                    <button
+                      onClick={handleToggleFavourite}
+                      style={{
+                        ...HomeStyles.favouriteButton,
+                        ...(isFavorite ? HomeStyles.favouriteButton : {}),
+                      }}
+                    >
+                      {isFavorite ? '× Eliminar de favoritos' : '♡ Agregar a favoritos'}
+                    </button>
+                  )}
                 </div>
 
                 <div style={{ flex: 1 }}>
@@ -219,19 +228,6 @@ const AnimeInfo = () => {
                     </p>
                   </div>
                 </div>
-              </div>
-              
-              {/* Botón de favoritos */}
-              <div style={HomeStyles.animeInfoButtonContainer}>
-                <button 
-                  onClick={handleToggleFavourite}
-                  style={{
-                    ...HomeStyles.animeInfoButton,
-                    ...(isFavorite ? HomeStyles.animeInfoButtonActive : {})
-                  }}
-                >
-                  {isFavorite ? '× Eliminar de favoritos' : '♡ Agregar a favoritos'}
-                </button>
               </div>
               
               {/* Detalles adicionales */}

@@ -75,6 +75,17 @@ const LoginScreen = () => {
         Crear Cuenta
       </button>
 
+      <button
+        style={{
+          ...AuthStyles.button,
+          backgroundColor: 'green',
+          color: 'white',
+        }}
+        onClick={() => navigate('/Home')}
+      >
+        Ingresar como Invitado
+      </button>
+
       {error && (
         <p style={AuthStyles.errorText}>
           ❌ Error: {error.message.includes('Network') ? 'No se pudo conectar al servidor.' : error.message}
