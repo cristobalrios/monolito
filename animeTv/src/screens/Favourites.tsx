@@ -4,12 +4,12 @@ import { GET_FAVOURITES } from '../graphql/queries/queries';
 import { DELETE_FROM_FAVOURITES } from '../graphql/mutations/mutations';
 import HomeStyles from '../styles/homeStyles';
 import { useNavigate } from 'react-router-dom';
-import imagenref from '../utils/ChatGPT_Image_tipica.png';
+import imagenref from '../utils/NoImageAvailable.png';
 
 const Favourites = () => {
   const [favouritesList, setFavouritesList] = useState<any[]>([]);
   const [getUserFavourites, { loading, error, data }] = useLazyQuery(GET_FAVOURITES, {
-    fetchPolicy: 'network-only', // Asegura que siempre se haga una nueva solicitud al servidor
+    fetchPolicy: 'network-only',
   });
   const [deleteFromFavourites] = useMutation(DELETE_FROM_FAVOURITES);
   const navigate = useNavigate();
@@ -21,7 +21,6 @@ const Favourites = () => {
       return;
     }
 
-    // Ejecutar la consulta para obtener los favoritos
     getUserFavourites({
       context: {
         headers: {
@@ -36,7 +35,7 @@ const Favourites = () => {
       setFavouritesList(
         data.obtenerFavoritos.map((anime: any) => ({
           ...anime,
-          isFavorite: true, // Todos los animes aquí son favoritos por definición
+          isFavorite: true,
         }))
       );
     }
@@ -68,7 +67,6 @@ const Favourites = () => {
       });
 
       if (response.data?.DeleteAnime?.success) {
-        // Volver a consultar los favoritos para asegurar la sincronización
         getUserFavourites({
           context: {
             headers: {
@@ -98,12 +96,14 @@ const Favourites = () => {
   return (
     <div style={HomeStyles.container}>
       <header style={HomeStyles.header}>
-        <h1 style={HomeStyles.logo}>OTAKUyt</h1>
+        <h1 style={{ ...HomeStyles.logo, cursor: 'pointer' }} onClick={() => navigate('/Home')}>
+          OTAKUyt
+        </h1>
         <div style={HomeStyles.navContainer}>
           {/* Botón de Volver */}
           <button
             style={HomeStyles.navButton}
-            onClick={() => navigate(-1)} // Navega a la página anterior
+            onClick={() => navigate(-1)}
           >
             ↩️ <span>Volver</span>
           </button>
@@ -112,11 +112,8 @@ const Favourites = () => {
           <button
             style={HomeStyles.navButton}
             onClick={() => {
-              // Eliminar el token de autenticación
               localStorage.removeItem('token');
-              // Eliminar la búsqueda guardada en localStorage
               localStorage.removeItem('homeSearch');
-              // Redirigir al usuario a la página de inicio o login
               navigate('/');
             }}
           >
@@ -129,7 +126,7 @@ const Favourites = () => {
         <h2 style={HomeStyles.sectionTitle}>Tus animes favoritos</h2>
 
         {favouritesList.length === 0 ? (
-          <p style={{ textAlign: 'center', marginTop: '2rem' }}>
+          <p style={HomeStyles.sectionSubtitle}>
             No tienes animes favoritos aún.
           </p>
         ) : (

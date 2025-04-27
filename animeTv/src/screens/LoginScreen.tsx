@@ -78,7 +78,7 @@ const LoginScreen = () => {
       <button
         style={{
           ...AuthStyles.button,
-          backgroundColor: 'green',
+          backgroundColor: '#0f4e09',
           color: 'white',
         }}
         onClick={() => navigate('/Home')}

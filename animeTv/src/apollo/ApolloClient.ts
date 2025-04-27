@@ -10,12 +10,12 @@ const httpLink = createHttpLink({
 });
 
 const authLink = setContext((_, { headers }) => {
-  const token = localStorage.getItem('token'); // Obtén el token del localStorage
+  const token = localStorage.getItem('token');
   return {
     headers: {
       ...headers,
       Authorization: token ? `Bearer ${token}` : '',
-      'Content-Type': 'application/json', // Asegúrate de incluir este encabezado
+      'Content-Type': 'application/json',
     },
   };
 });

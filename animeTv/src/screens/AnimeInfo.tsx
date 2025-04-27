@@ -4,7 +4,7 @@ import { useQuery, useMutation } from '@apollo/client';
 import { GET_ANIME } from '../graphql/queries/queries';
 import { ADD_TO_FAVOURITES, DELETE_FROM_FAVOURITES } from '../graphql/mutations/mutations';
 import HomeStyles from '../styles/homeStyles';
-import imagenref from '../utils/ChatGPT_Image_tipica.png';
+import imagenref from '../utils/NoImageAvailable.png';
 
 const AnimeInfo = () => {
   const { id } = useParams<{ id: string }>();
@@ -99,11 +99,11 @@ const AnimeInfo = () => {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' };
-    return date.toLocaleDateString('es-ES', options); // Formato en español
+    return date.toLocaleDateString('es-ES', options);
   };
 
   const getEmbedUrl = (url: string) => {
-    const videoId = url.split('v=')[1]?.split('&')[0]; // Extrae el ID del video
+    const videoId = url.split('v=')[1]?.split('&')[0];
     return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
   };
 
@@ -119,7 +119,9 @@ const AnimeInfo = () => {
   return (
     <div style={HomeStyles.container}>
       <header style={HomeStyles.header}>
-        <h1 style={HomeStyles.logo}>OTAKUyt</h1>
+        <h1 style={{ ...HomeStyles.logo, cursor: 'pointer' }} onClick={() => navigate('/Home')}>
+          OTAKUyt
+        </h1>
         <div style={HomeStyles.navContainer}>
         {localStorage.getItem('token') && (
           <button 
@@ -141,11 +143,8 @@ const AnimeInfo = () => {
           <button
             style={HomeStyles.navButton}
             onClick={() => {
-              // Eliminar el token de autenticación
               localStorage.removeItem('token');
-              // Eliminar la búsqueda guardada en localStorage
               localStorage.removeItem('homeSearch');
-              // Redirigir al usuario a la página de inicio o login
               navigate('/');
             }}
           >

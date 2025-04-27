@@ -5,7 +5,7 @@ const AuthStyles: { [key: string]: CSSProperties } = {
     width: '100%',
     maxWidth: '400px',
     padding: '15px',
-    backgroundColor: '#4a90e2',
+    backgroundColor: '#65558f',
     color: 'white',
     border: 'none',
     borderRadius: '8px',

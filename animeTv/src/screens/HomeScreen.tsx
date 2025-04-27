@@ -4,7 +4,7 @@ import HomeStyles from '../styles/homeStyles';
 import { useMutation } from '@apollo/client';
 import { ADD_TO_FAVOURITES, DELETE_FROM_FAVOURITES } from '../graphql/mutations/mutations';
 import { ADVANCED_SEARCH, GET_AIRING, GET_FAVOURITES } from '../graphql/queries/queries';
-import imagenref from '../utils/ChatGPT_Image_tipica.png';
+import imagenref from '../utils/NoImageAvailable.png';
 import { useNavigate } from 'react-router-dom';
 import genreMap from '../genres/GenreMap';
 
@@ -16,7 +16,8 @@ const HomeScreen = () => {
   const [generos, setGeneros] = useState<string[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
   const [animesList, setAnimesList] = useState<any[]>([]);
-  const [generosVisibles, setGenerosVisibles] = useState(8); // Estado para controlar la cantidad de géneros visibles
+  const [generosVisibles, setGenerosVisibles] = useState(8);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const navigate = useNavigate();
 
   const [addToFavourites] = useMutation(ADD_TO_FAVOURITES);
@@ -25,7 +26,6 @@ const HomeScreen = () => {
   const [getAiringAnime, { loading: airingLoading, error: airingError, data: airingData }] = useLazyQuery(GET_AIRING);
   const [getUserFavourites, { data: favoritesData }] = useLazyQuery(GET_FAVOURITES);
 
-  // Restaurar búsqueda desde localStorage al cargar el componente
   useEffect(() => {
     const savedSearch = localStorage.getItem('homeSearch');
     if (savedSearch) {
@@ -37,26 +37,23 @@ const HomeScreen = () => {
       setGeneros(generos || []);
       setAnimesList(animesList || []);
       setHasSearched(hasSearched || false);
-  
+
       const variables: any = {};
       if (nombre) variables.nombre = nombre;
       if (tipo) variables.tipo = tipo;
       if (estado) variables.estado = estado;
       if (minScore !== undefined) variables.minScore = minScore;
       if (generos.length > 0) variables.genero = generos.join(',');
-  
+
       if (Object.keys(variables).length > 0) {
         searchAnime({ variables });
       }
     } else {
-      // Siempre cargar animes en emisión si no hay búsqueda guardada
       getAiringAnime();
       setHasSearched(false);
     }
   }, [getAiringAnime]);
-  
 
-  // Guardar búsqueda en localStorage antes de navegar
   const handleNavigateToFavourites = () => {
     const searchState = {
       nombre,
@@ -73,7 +70,7 @@ const HomeScreen = () => {
 
   useEffect(() => {
     if (!hasSearched) {
-      getAiringAnime(); // Cargar animes en emisión si no se ha realizado una búsqueda
+      getAiringAnime();
     }
   }, [hasSearched, getAiringAnime]);
 
@@ -89,7 +86,7 @@ const HomeScreen = () => {
   useEffect(() => {
     const checkFavourites = async () => {
       if (!localStorage.getItem('token')) return;
-  
+
       try {
         await getUserFavourites({
           context: {
@@ -108,7 +105,7 @@ const HomeScreen = () => {
   useEffect(() => {
     if (favoritesData?.obtenerFavoritos) {
       const favouriteIds = favoritesData.obtenerFavoritos.map((fav: { malId: any }) => fav.malId);
-  
+
       if (airingData?.enEmision) {
         setAnimesList((prev) =>
           airingData.enEmision.map((anime: any) => ({
@@ -117,7 +114,7 @@ const HomeScreen = () => {
           }))
         );
       }
-  
+
       if (searchData?.busquedaAvanzada) {
         setAnimesList((prev) =>
           searchData.busquedaAvanzada.map((anime: any) => ({
@@ -128,8 +125,7 @@ const HomeScreen = () => {
       }
     }
   }, [favoritesData, airingData, searchData]);
-  
-  // Nuevo useEffect para manejar airingData si no hay favoritos (sin token)
+
   useEffect(() => {
     if (!favoritesData && airingData?.enEmision) {
       setAnimesList(
@@ -141,10 +137,8 @@ const HomeScreen = () => {
     }
   }, [airingData, favoritesData]);
 
-
   const handleSearch = () => {
     const variables: any = {};
-
     if (nombre !== '') variables.nombre = nombre;
     if (tipo !== '') variables.tipo = tipo;
     if (estado !== '') variables.estado = estado;
@@ -152,9 +146,8 @@ const HomeScreen = () => {
     if (generos.length > 0) variables.genero = generos.join(',');
 
     setHasSearched(true);
-    searchAnime({
-      variables,
-    });
+    searchAnime({ variables });
+    setIsFilterModalOpen(false);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -164,12 +157,19 @@ const HomeScreen = () => {
   };
 
   const handleLogout = () => {
+    setNombre('');
+    setTipo('');
+    setEstado('');
+    setMinScore(undefined);
+    setGeneros([]);
+    setGenerosVisibles(8);
+    setHasSearched(false);
+    localStorage.removeItem('homeSearch');
     localStorage.removeItem('token');
     navigate('/');
   };
 
   const handleAnimeClick = (animeId: string) => {
-    // Guardar el estado de búsqueda en localStorage antes de navegar
     const searchState = {
       nombre,
       tipo,
@@ -180,7 +180,7 @@ const HomeScreen = () => {
       hasSearched,
     };
     localStorage.setItem('homeSearch', JSON.stringify(searchState));
-    navigate(`/AnimeInfo/${animeId}`); // Navegar a la página de detalles del anime
+    navigate(`/AnimeInfo/${animeId}`);
   };
 
   const toggleGenero = (genero: string) => {
@@ -193,7 +193,7 @@ const HomeScreen = () => {
   const showSearchResults = hasSearched && searchData?.busquedaAvanzada;
   const isLoading = airingLoading || searchLoading;
   const error = airingError || searchError;
-  
+
   const handleToggleFavourite = async (anime: any, e: React.MouseEvent) => {
     e.stopPropagation();
     const token = localStorage.getItem('token');
@@ -202,46 +202,48 @@ const HomeScreen = () => {
       alert('Debes iniciar sesión para guardar favoritos');
       return;
     }
-    
+
     try {
       const malId = anime.malId || anime.mal_id;
       let response;
-      
+
       if (anime.isFavorite) {
-                response = await deleteFromFavourites({
-          variables: {malId},
+        response = await deleteFromFavourites({
+          variables: { malId },
           context: {
             headers: {
-              Authorization: `Bearer ${token}`
-            }
-          }
+              Authorization: `Bearer ${token}`,
+            },
+          },
         });
         if (response.data?.DeleteAnime?.success) {
           alert(`"${anime.title}" ha sido eliminado de tus favoritos.`);
         }
       } else {
         response = await addToFavourites({
-          variables: {malId},
+          variables: { malId },
           context: {
             headers: {
-              Authorization: `Bearer ${token}`
-            }
-          }
+              Authorization: `Bearer ${token}`,
+            },
+          },
         });
         if (response.data?.SaveAnime?.success) {
           alert(`"${anime.title}" ha sido agregado a tus favoritos.`);
         }
-      } 
-      
+      }
+
       if (response.data?.SaveAnime?.success || response.data?.DeleteAnime?.success) {
-        
-        setAnimesList(prev => prev.map(a => 
-          (a.malId === malId || a.mal_id === malId) ? {...a, isFavorite: !a.isFavorite} : a
-        ));
+        setAnimesList((prev) =>
+          prev.map((a) =>
+            (a.malId === malId || a.mal_id === malId) ? { ...a, isFavorite: !a.isFavorite } : a
+          )
+        );
       } else {
-        const errorMessage = response.data?.SaveAnime?.message || 
-                           response.data?.DeleteAnime?.message || 
-                           'Error desconocido';
+        const errorMessage =
+          response.data?.SaveAnime?.message ||
+          response.data?.DeleteAnime?.message ||
+          'Error desconocido';
         alert(errorMessage);
       }
     } catch (error) {
@@ -250,209 +252,269 @@ const HomeScreen = () => {
     }
   };
 
+  const handleClearSearch = async () => {
+    setNombre('');
+    setTipo('');
+    setEstado('');
+    setMinScore(undefined);
+    setGeneros([]);
+    setGenerosVisibles(8);
+    setHasSearched(false);
+    
+    localStorage.removeItem('homeSearch');
+    const token = localStorage.getItem('token');
+    
+    try {
+      const [airingResult, favouritesResult] = await Promise.all([
+        getAiringAnime(),
+        token ? getUserFavourites({
+          context: {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        }) : Promise.resolve({ data: null }),
+      ]);
+  
+      const airingAnimes = airingResult.data?.enEmision || [];
+      const favouriteIds = favouritesResult.data?.obtenerFavoritos?.map((fav: { malId: number }) => fav.malId) || [];
+  
+      setAnimesList(
+        airingAnimes.map((anime: any) => ({
+          ...anime,
+          isFavorite: favouriteIds.includes(anime.malId),
+        }))
+      );
+    } catch (error) {
+      console.error('Error al limpiar búsqueda:', error);
+    }
+  };
+
   return (
     <div style={HomeStyles.container}>
       {/* Barra superior morada */}
       <header style={HomeStyles.header}>
-        <h1 style={HomeStyles.logo}>OTAKUyt</h1>
+        <h1 style={{ ...HomeStyles.logo, cursor: 'pointer' }} onClick={() => navigate('/Home')}>
+          OTAKUyt
+        </h1>
+        <div style={{ ...HomeStyles.navContainer, flex: 1, justifyContent: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', maxWidth: '600px', width: '100%' }}>
+            <input
+              type="text"
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Buscar por nombre..."
+              style={{ ...HomeStyles.searchInput, flex: 1 }}
+            />
+            <button
+              onClick={() => setIsFilterModalOpen(true)}
+              style={HomeStyles.optionButton}
+            >
+              Filtros
+            </button>
+            {/* Botón para limpiar búsqueda */}
+            
+            <button
+              onClick={handleClearSearch}
+              style={HomeStyles.optionButton}
+            >
+              Limpiar búsqueda
+            </button>
+
+          </div>
+        </div>
         <div style={HomeStyles.navContainer}>
-        {localStorage.getItem('token') && (
-          <button 
-            style={HomeStyles.navButton}
-            onClick={handleNavigateToFavourites}
-          >
-            ❤️ <span>Favoritos</span>
-          </button>
-        )}
-          
-          {/* Cerrar Sesión */}
-          <button
-            style={HomeStyles.navButton}
-            onClick={() => {
-              // Eliminar el token de autenticación
-              localStorage.removeItem('token');
-              // Limpiar el estado de búsqueda
-              setNombre('');
-              setTipo('');
-              setEstado('');
-              setMinScore(undefined);
-              setGeneros([]);
-              setAnimesList([]);
-              setHasSearched(false);
-              // Eliminar la búsqueda guardada en localStorage
-              localStorage.removeItem('homeSearch');
-              // Redirigir al usuario a la página de inicio o login
-              navigate('/');
-            }}
-          >
+          {localStorage.getItem('token') && (
+            <button style={HomeStyles.navButton} onClick={handleNavigateToFavourites}>
+              ❤️ <span>Favoritos</span>
+            </button>
+          )}
+          <button style={HomeStyles.navButton} onClick={handleLogout}>
             🚪 <span>Salir</span>
           </button>
         </div>
       </header>
 
+      {/* Modal de filtros */}
+      {isFilterModalOpen && (
+        <div style={HomeStyles.modalOverlay}>
+          <div style={HomeStyles.modalContent}>
+            <h2 style={{ ...HomeStyles.sectionTitle, color: '#ffffff', fontSize: '24px', margin: '0 0 20px 0' }}>
+              Filtros de búsqueda
+            </h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+              <select
+                value={tipo}
+                onChange={(e) => setTipo(e.target.value)}
+                style={HomeStyles.searchInput}
+              >
+                <option value="">Tipo</option>
+                <option value="TV">Serie de TV</option>
+                <option value="Movie">Película</option>
+                <option value="OVA">OVA</option>
+                <option value="special">Especial de televisión</option>
+                <option value="ONA">ONA</option>
+                <option value="Music">Videos musicales</option>
+              </select>
+              <select
+                value={estado}
+                onChange={(e) => setEstado(e.target.value)}
+                style={HomeStyles.searchInput}
+              >
+                <option value="">Estado</option>
+                <option value="airing">En emisión</option>
+                <option value="complete">Finalizado</option>
+                <option value="upcoming">Próximamente</option>
+              </select>
+              <input
+                type="number"
+                value={minScore || ''}
+                onChange={(e) => {
+                  const value = parseFloat(e.target.value);
+                  if (value >= 1 && value <= 10) {
+                    setMinScore(value);
+                  } else if (value < 1) {
+                    setMinScore(1);
+                  } else if (value > 10) {
+                    setMinScore(10);
+                  }
+                }}
+                placeholder="Puntuación mínima (entre 1 y 10)"
+                step="0.1"
+                style={HomeStyles.searchInput}
+              />
+              <div>
+                <label style={{ ...HomeStyles.sectionTitle, color: '#ffffff', fontSize: '16px', fontWeight: 'bold' }}>
+                  Seleccionar Géneros:
+                </label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                  {Object.entries(genreMap)
+                    .slice(0, generosVisibles)
+                    .map(([key, value]) => (
+                      <button
+                        key={key}
+                        onClick={() => toggleGenero(key)}
+                        style={{
+                          padding: '10px 15px',
+                          borderRadius: '5px',
+                          border: '1px solid #ccc',
+                          backgroundColor: generos.includes(key) ? '#0f4e09' : '#f9f9f9',
+                          color: generos.includes(key) ? '#fff' : '#000',
+                          cursor: 'pointer',
+                          fontSize: '14px',
+                          transition: 'background-color 0.3s ease, color 0.3s ease',
+                        }}
+                      >
+                        {value}
+                      </button>
+                    ))}
+                </div>
+                <div style={{ marginTop: '10px', display: 'flex', gap: '10px' }}>
+                  {generosVisibles < Object.keys(genreMap).length && (
+                    <button
+                      onClick={() => setGenerosVisibles((prev) => prev + 8)}
+                      style={HomeStyles.optionButton}
+                    >
+                      Ver más
+                    </button>
+                  )}
+                  {generosVisibles > 8 && (
+                    <button
+                      onClick={() => setGenerosVisibles((prev) => Math.max(prev - 8, 8))}
+                      style={HomeStyles.optionButton}
+                    >
+                      Ver menos
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '20px' }}>
+              <button onClick={handleSearch} style={HomeStyles.optionButton}>
+                Aplicar filtros
+              </button>
+              <button
+                onClick={() => setIsFilterModalOpen(false)}
+                style={{ ...HomeStyles.optionButton, backgroundColor: 'transparent' }}
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Contenido principal */}
       <div style={HomeStyles.content}>
         <h2 style={HomeStyles.sectionTitle}>Listado de animes</h2>
         <p style={HomeStyles.sectionSubtitle}>
-          Haga click en el título del anime para ver información detallada.
+          Haga clic en el título del anime para ver información detallada.
         </p>
-
-        {/* Barra de búsqueda avanzada */}
-        <div style={HomeStyles.searchContainer}>
-          <input
-            type="text"
-            value={nombre}
-            onChange={(e) => setNombre(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Buscar por nombre..."
-            style={HomeStyles.searchInput}
-          />
-          <select
-            value={tipo}
-            onChange={(e) => setTipo(e.target.value)}
-            style={HomeStyles.searchInput}
-          >
-            <option value="">Tipo</option>
-            <option value="TV">serie de TV</option>
-            <option value="Movie">Película</option>
-            <option value="OVA">OVA</option>
-            <option value="special">Especial de televisión </option>
-            <option value="ONA">ONA</option>
-            <option value="Music">videos Musicales</option>
-          </select>
-          <select
-            value={estado}
-            onChange={(e) => setEstado(e.target.value)}
-            style={HomeStyles.searchInput}
-          >
-            <option value="">Estado</option>
-            <option value="airing">En emisión</option>
-            <option value="complete">Finalizado</option>
-            <option value="upcoming">Próximamente</option>
-          </select>
-          <input
-            type="number"
-            value={minScore || ''}
-            onChange={(e) => {
-              const value = parseFloat(e.target.value);
-              if (value >= 1 && value <= 10) {
-                setMinScore(value);
-              } else if (value < 1) {
-                setMinScore(1); // Ajusta automáticamente al mínimo permitido
-              } else if (value > 10) {
-                setMinScore(10); // Ajusta automáticamente al máximo permitido
-              }
-            }}
-            placeholder="Puntuación mínima (entre 1 y 10)"
-            step="0.1"
-            style={HomeStyles.searchInput}
-          />
-          <button onClick={handleSearch} style={HomeStyles.searchButton}>
-            Buscar
-          </button>
-        </div>
-
-        {/* Filtros de género */}
-        <div style={{ margin: '15px 0' }}>
-          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Seleccionar géneros:</label>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-            {Object.entries(genreMap)
-              .slice(0, generosVisibles) // Mostrar solo los géneros visibles
-              .map(([key, value]) => (
-                <button
-                  key={key}
-                  onClick={() => toggleGenero(key)}
-                  style={{
-                    padding: '10px 15px',
-                    borderRadius: '5px',
-                    border: '1px solid #ccc',
-                    backgroundColor: generos.includes(key) ? '#6200ea' : '#f9f9f9',
-                    color: generos.includes(key) ? '#fff' : '#000',
-                    cursor: 'pointer',
-                    fontSize: '14px',
-                    transition: 'background-color 0.3s ease, color 0.3s ease',
-                  }}
-                >
-                  {value}
-                </button>
-              ))}
-          </div>
-          <div style={{ marginTop: '10px', display: 'flex', gap: '10px' }}>
-            {generosVisibles < Object.keys(genreMap).length && (
-              <button
-                onClick={() => setGenerosVisibles((prev) => prev + 8)} // Mostrar 8 más
-                style={{
-                  padding: '10px 15px',
-                  borderRadius: '5px',
-                  border: '1px solid #ccc',
-                  backgroundColor: '#6200ea',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  transition: 'background-color 0.3s ease, color 0.3s ease',
-                }}
-              >
-                Ver más
-              </button>
-            )}
-            {generosVisibles > 8 && (
-              <button
-                onClick={() => setGenerosVisibles((prev) => Math.max(prev - 8, 8))} // Mostrar 8 menos
-                style={{
-                  padding: '10px 15px',
-                  borderRadius: '5px',
-                  border: '1px solid #ccc',
-                  backgroundColor: '#6200ea',
-                  color: '#fff',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  transition: 'background-color 0.3s ease, color 0.3s ease',
-                }}
-              >
-                Ver menos
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Botón para limpiar búsqueda */}
-        <div style={{ marginTop: '20px', textAlign: 'center', marginBottom: '20px' }}>
-          <button
-            onClick={() => {
-              setNombre('');
-              setTipo('');
-              setEstado('');
-              setMinScore(undefined);
-              setGeneros([]);
-              setHasSearched(false);
-              setGenerosVisibles(8); // Restablecer géneros visibles a 8
-              getAiringAnime(); // Mostrar animes en emisión por defecto
-            }}
-            style={{
-              padding: '10px 20px',
-              borderRadius: '5px',
-              border: '1px solid #ccc',
-              backgroundColor: '#ff6b6b',
-              color: '#fff',
-              cursor: 'pointer',
-              fontSize: '14px',
-              transition: 'background-color 0.3s ease, color 0.3s ease',
-            }}
-          >
-            Limpiar búsqueda
-          </button>
-        </div>
 
         {/* Resultados */}
         {isLoading && <p style={{ textAlign: 'center' }}>Cargando resultados...</p>}
         {error && <p style={{ color: '#ff6b6b', textAlign: 'center' }}>Error: {error.message}</p>}
 
-        {/* Mostrar resultados de búsqueda si hay una búsqueda */}
         {showSearchResults && (
           <ul style={HomeStyles.animeList}>
             {animesList.map((anime: any) => (
+              <li key={anime.malId} style={HomeStyles.animeItem}>
+                <div style={{ display: 'flex', gap: '20px' }}>
+                  <img
+                    src={anime.imageUrl}
+                    alt={anime.title}
+                    style={{
+                      width: '250px',
+                      height: '350px',
+                      objectFit: 'contain',
+                      borderRadius: '5px',
+                    }}
+                    onError={(e) => {
+                      e.currentTarget.src = imagenref;
+                    }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <h3
+                      style={{ ...HomeStyles.animeTitle, cursor: 'pointer', color: '#ffffff' }}
+                      onClick={() => handleAnimeClick(anime.malId)}
+                    >
+                      {anime.title}
+                    </h3>
+                    <p style={HomeStyles.animeDescription}>
+                      {anime.synopsis || 'Sin descripción'}
+                    </p>
+                    {localStorage.getItem('token') && (
+                      <button
+                        style={{
+                          ...HomeStyles.favouriteButton,
+                          ...(anime.isFavorite ? { color: 'white' } : {}),
+                          transition: 'all 0.3s ease',
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggleFavourite(anime, e);
+                        }}
+                      >
+                        {anime.isFavorite ? '× Eliminar de favoritos' : '♡ Agregar a favoritos'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {showAiringAnime && (
+          <>
+            <h3 style={{ ...HomeStyles.sectionTitle, fontSize: '32px', margin: '20px 0' }}>
+              En Emisión
+            </h3>
+            <ul style={HomeStyles.animeList}>
+              {animesList.map((anime: any) => (
                 <li key={anime.malId} style={HomeStyles.animeItem}>
-                   <div style={{ display: 'flex', gap: '20px' }}>
+                  <div style={{ display: 'flex', gap: '20px' }}>
                     <img
                       src={anime.imageUrl}
                       alt={anime.title}
@@ -477,12 +539,10 @@ const HomeScreen = () => {
                         {anime.synopsis || 'Sin descripción'}
                       </p>
                       {localStorage.getItem('token') && (
-                        <button 
-                          style={{ 
+                        <button
+                          style={{
                             ...HomeStyles.favouriteButton,
-                            ...(anime.isFavorite ? { 
-                              color: 'white'
-                            } : {}),
+                            ...(anime.isFavorite ? { color: 'white' } : {}),
                             transition: 'all 0.3s ease',
                           }}
                           onClick={(e) => {
@@ -497,63 +557,6 @@ const HomeScreen = () => {
                   </div>
                 </li>
               ))}
-          </ul>
-        )}
-
-        {/* Mostrar animes en emisión por defecto cuando no hay búsqueda */}
-        {showAiringAnime && (
-          <>
-            <h3 style={{ ...HomeStyles.sectionTitle, fontSize: '32px', margin: '20px 0' }}>
-              En Emisión
-            </h3>
-            <ul style={HomeStyles.animeList}>
-              {animesList.map((anime: any) => (
-                  <li key={anime.malId} style={HomeStyles.animeItem}>
-                     <div style={{ display: 'flex', gap: '20px' }}>
-                    <img
-                      src={anime.imageUrl}
-                      alt={anime.title}
-                      style={{
-                        width: '250px',
-                        height: '350px',
-                        objectFit: 'contain',
-                        borderRadius: '5px',
-                      }}
-                      onError={(e) => {
-                        e.currentTarget.src = imagenref;
-                      }}
-                    />
-                    <div style={{ flex: 1 }}>
-                      <h3
-                        style={{ ...HomeStyles.animeTitle, cursor: 'pointer', color: '#ffffff' }}
-                        onClick={() => handleAnimeClick(anime.malId)}
-                      >
-                        {anime.title}
-                      </h3>
-                      <p style={HomeStyles.animeDescription}>
-                        {anime.synopsis || 'Sin descripción'}
-                      </p>
-                      {localStorage.getItem('token') && (
-                        <button 
-                        style={{ 
-                          ...HomeStyles.favouriteButton,
-                          ...(anime.isFavorite ? { 
-                            color: 'white'
-                          } : {}),
-                          transition: 'all 0.3s ease',
-                        }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleToggleFavourite(anime, e);
-                        }}
-                      >
-                        {anime.isFavorite ? '× Eliminar de favoritos' : '♡ Agregar a favoritos'}
-                      </button>
-                    )}
-                    </div>
-                  </div>
-                  </li>
-                ))}
             </ul>
           </>
         )}
